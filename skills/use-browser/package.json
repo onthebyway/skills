@@ -1,0 +1,24 @@
+{
+  "name": "use-browser",
+  "version": "1.0.0",
+  "description": "Playwright helpers for browser-based agent debugging.",
+  "scripts": {
+    "inspect": "node scripts/browser-inspect.ts",
+    "compare": "node scripts/compare-pages.ts",
+    "install-browser": "playwright install chromium"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.5.2",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

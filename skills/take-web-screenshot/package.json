@@ -1,0 +1,11 @@
+{
+  "name": "take-web-screenshot-skill",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "node scripts/capture-url.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.53.0"
+  }
+}
