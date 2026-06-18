@@ -1,0 +1,9 @@
+{
+  "name": "notion-tickets-skill",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "notion-tickets": "node scripts/notion-tickets.ts",
+    "check": "node scripts/notion-tickets.ts --help >/dev/null"
+  }
+}
