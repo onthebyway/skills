@@ -77,14 +77,38 @@ figma-analysis/estimates/
 
 Use this hierarchy when dissecting the Figma file:
 
-1. **Pages**: broad site/app areas, routes, Figma pages, product sections, or design-system pages. Pages mainly organize requirements and route groups.
-2. **Templates**: complete route/screen composition patterns developers will build, such as homepage, product detail, dashboard, settings, checkout step. Templates must list an ordered CMS module stack and separate hardcoded page components.
-3. **Modules**: reusable CMS-programmable page sections or feature blocks, such as hero, reference slider, fact grid, pricing table, testimonial slider, search results, account sidebar, CTA band. Modules are the primary scoping and estimating unit.
+1. **Pages**: concrete CMS route/content instances or route groups, including locale/country/audience variants. Pages mainly store route metadata, source screenshots, selected template, content-specific module variants, and differences/overrides. Example: `about-switzerland.md` and `about-luxembourg.md` are pages.
+2. **Templates**: reusable route/screen composition patterns developers will build, such as homepage, about, service overview, customer overview, text page, product detail, dashboard, settings, checkout step. Templates must list an ordered CMS module stack and separate hardcoded page components. Do not create separate templates for pages that only differ by content, locale/country, or slight module variants. Example: one `about.md` template can be used by both `about-switzerland.md` and `about-luxembourg.md` pages.
+3. **Modules**: reusable CMS-programmable page-section families or feature-block families, such as hero, reference slider, fact grid, pricing table, testimonial slider, search results, account sidebar, CTA band. Modules are the primary scoping and estimating unit. Similar sections should be merged into one module family with variants when they share purpose, fields, components, or layout skeleton.
 4. **Components**: smaller reusable UI parts and global shell pieces, such as header, navigation, footer, button, link, card, badge, input, accordion item, icon. Components may be contained in modules or hardcoded into a page/template location.
 5. **Content models**: CMS/data shapes needed to populate templates/modules, such as page, article, product, hero module content, testimonial, CTA, card item.
 6. **Interactions**: behavior patterns, such as carousel, modal, accordion, filtering, form validation, dropdown navigation, quiz scoring.
 7. **Styles**: design tokens and global visual rules, such as colors, typography, spacing, radii, shadows, breakpoints.
 8. **Estimates**: optional rough rollups, only when requested, based on estimates per unique module and component. Page totals are calculated from the page's module stack plus hardcoded page components, with only a small page assembly allowance if needed.
+
+## Page vs template rules
+
+Keep page instances separate from implementation templates:
+
+- Create a **page** for each concrete route/content instance that may exist in the CMS, including country/locale/audience variants such as `about-switzerland.md` and `about-luxembourg.md`.
+- Create a **template** for each reusable implementation/layout pattern, such as `about.md`, `services-overview.md`, or `contact.md`.
+- Multiple pages should point to the same template when they share the same layout skeleton and module stack, even if copy, locale, market/country content, imagery, or a few module variants differ.
+- Create a separate template only when the layout skeleton, required hardcoded page components, data requirements, or assembly rules materially differ.
+- Page files should answer: "What route/content instance is this, which template does it use, and what content/module variants override the default?"
+- Template files should answer: "What reusable module stack and hardcoded components must be built once?"
+
+## Module family and variant rules
+
+After drafting candidate `modules/*.md`, cluster candidate modules into module families:
+
+- Prefer **one module file with variants** when candidates share the same editorial purpose and core CMS fields, even if the visual treatment differs by page. For example, `Hero` can include homepage, inner-page, image-backed, and contacted/FAQ variants.
+- Prefer a **variant** when differences are content-only, theme/color, background/media, spacing/density, optional CTA(s), optional media, or page-context treatment.
+- Create a **separate module** only when the primary purpose, editor workflow, data source, interaction model, or contained component structure materially differs.
+- If uncertain, default to a broader configurable module family and document field/variant constraints rather than creating one-off modules.
+- Name module and component files by reusable function/structure, not by one page's text content or business-specific copy. Prefer `final-cta.md`, `image-carousel.md`, `hero.md`, `accordion-list.md`, `card-grid.md`, `logo-grid.md`; avoid names like `recruiting-cta.md` or `process-carousel.md` unless the CMS model/behavior is truly specific to that content type.
+- Put page/content-specific language in template usage, variant names, screenshots, and notes instead of the base module/component name. Example: `[Final CTA](../modules/final-cta.md) — variant: recruiting`.
+- Template stacks should link to the module family and name the variant inline: `[Hero](../modules/hero.md) — variant: contacted`.
+- A module file should include screenshots for meaningful variants beside the same Markdown file: `hero.jpg`, `hero--inner-page.jpg`, `hero--contacted.jpg`.
 
 Prefer readable relationships over dense JSON edges. Always use regular relative Markdown links, not wiki links:
 
@@ -118,10 +142,48 @@ Rules:
 
 - Base screenshot uses the same basename as the Markdown file: `hero.md` → `hero.png`.
 - Variants use `--variant-name`: `hero--dark.png`, `button--secondary.png`, `card--compact.png`.
+- Screenshot files in `modules/` and `components/` must be real crops of that module/component, not full-page screenshots renamed to match the Markdown file.
+- Full-page/template screenshots stay in `screenshots/pdf/` and are referenced from page/template files, not copied beside module/component files.
+- A valid module/component crop must be as tight as possible around the full module/component without cutting off any part of it. Include only enough surrounding whitespace/context to preserve edges, shadows, focus rings, or overlapping elements that belong to it.
+- If crop boundaries are uncertain, expand the crop slightly rather than cutting into the component; do not expand so far that unrelated modules, a complete long page, or the global header/footer are included unless those are part of the component being documented.
 - Capture every variant that differs materially in styling, size, composition, behavior state, or CMS structure.
 - Do not capture duplicate content-only examples if layout/styling/composition is the same.
 - Embed screenshots near the top of the Markdown file using relative image links, e.g. `![Hero module](./hero.png)`.
-- If a screenshot cannot be cropped confidently from the PDF/Figma source, add a `## Screenshot status` section explaining what is missing.
+- Before delivery, review co-located module/component screenshots and remove or replace any images that are actually full-page screenshots.
+- Prefer the helper script for reproducible crops instead of manual image handling:
+
+```bash
+node .agents/skills/figma-design-scoper/scripts/pdf-crop-regions.ts \
+  --pdf=exports/frames.pdf \
+  --out=figma-analysis \
+  --page=12 \
+  --target=modules/hero.jpg \
+  --units=percent \
+  --x=5 --y=10 --w=90 --h=30
+```
+
+For batches, create `_pdf/crop-plan.json`:
+
+```json
+{
+  "pdf": "exports/frames.pdf",
+  "outDir": "figma-analysis",
+  "units": "percent",
+  "format": "jpg",
+  "crops": [
+    { "page": 12, "target": "modules/hero.jpg", "x": 5, "y": 10, "w": 90, "h": 30 },
+    { "page": 3, "target": "components/button.jpg", "x": 5, "y": 5, "w": 90, "h": 90 }
+  ]
+}
+```
+
+Then run:
+
+```bash
+node .agents/skills/figma-design-scoper/scripts/pdf-crop-regions.ts --plan=figma-analysis/_pdf/crop-plan.json
+```
+
+The script writes `_pdf/crops-manifest.json` and warns when a crop looks like a near-full-page image.
 
 ## YAML frontmatter conventions
 
@@ -224,42 +286,63 @@ Only `actual-design` and `design-system` pages should drive full analysis. Suppo
 
 ## pages/*.md
 
-Use for broad areas or Figma/PDF sections.
+Use for concrete CMS route/content instances, including country/locale/audience variants. A page should normally link to one reusable template and describe only the content, module variant choices, route metadata, and page-specific overrides. Do not duplicate a full template file just because two page instances have different copy or market-specific content.
 
 Recommended sections:
 
 ```markdown
 ## Purpose
 
-## Contains
-- [Homepage](../templates/homepage.md)
-- [Product detail](../templates/product-detail.md)
+## Uses template
+- [About](../templates/about.md)
 
-## Key screenshots
+## Route/content metadata
+| Field | Value |
+|---|---|
+| Route | `/about` |
+| Country/market | Switzerland |
+| Locale | de-CH |
 
-## Notes
+## Source screenshots
+- PDF page: 24
+- Screenshot: `../screenshots/pdf/example-page-024.jpg`
 
-## Open questions
+## Module variant selections / overrides
+1. [Hero](../modules/hero.md) — variant: inner-page, content: Switzerland
+2. [Story carousel](../modules/image-carousel.md) — variant: about/company-history
+3. [Final CTA](../modules/final-cta.md) — variant: recruiting
+
+## Content notes
+
+## Page-specific risks/open questions
 ```
+
+If a Figma export contains `about-switzerland` and `about-luxembourg` with the same layout skeleton, create two page files that both use one shared [About](../templates/about.md) template.
 
 ## templates/*.md
 
-Use for complete buildable page/route composition patterns. Templates should not duplicate all module details; they should answer "what module stack builds this page?" and "what must exist first?"
+Use for reusable buildable page/route composition patterns, not content instances. Templates should not duplicate all module details; they should answer "what reusable module stack builds this class of page?" and "what must exist first?" A template can and should be used by multiple page files when the differences are content, locale/country, imagery, or slight module variants.
 
 Required sections:
 
 ```markdown
 ## Purpose
 
+## Used by pages
+- [About Switzerland](../pages/about-switzerland.md)
+- [About Luxembourg](../pages/about-luxembourg.md)
+
 ## Source frames
 - Figma node: `12:345`
-- Screenshot: `../screenshots/marketing-site/homepage.png`
+- Screenshot examples:
+  - `../screenshots/pdf/example-about-switzerland.jpg`
+  - `../screenshots/pdf/example-about-luxembourg.jpg`
 
 ## CMS module stack
-1. [Hero](../modules/hero.md)
-2. [Reference slider](../modules/reference-slider.md)
+1. [Hero](../modules/hero.md) — allowed variants: inner-page, media-backed
+2. [Image carousel](../modules/image-carousel.md) — allowed variants: story/about
 3. [Fact grid](../modules/fact-grid.md)
-4. [CTA band](../modules/cta-band.md)
+4. [Final CTA](../modules/final-cta.md) — allowed variants: recruiting, contact
 
 ## Hardcoded page components
 - [Header](../components/header.md)
@@ -290,7 +373,7 @@ Required sections:
 
 ## modules/*.md
 
-Use for reusable CMS-programmable sections or feature blocks. Modules are the primary implementation/scoping artifact. Each module should be flexible enough for editors to compose pages without creating a one-off template for every design variation.
+Use for reusable CMS-programmable section families or feature-block families. Modules are the primary implementation/scoping artifact. Each module should be flexible enough for editors to compose pages without creating a one-off template or one-off module for every design variation. Module names should describe the reusable structure/function rather than the current page copy or subject matter.
 
 Required sections:
 
@@ -298,11 +381,13 @@ Required sections:
 ## Purpose
 
 ## Screenshots
-![Hero module](./hero.png)
-![Hero dark variant](./hero--dark.png)
+![Hero base variant](./hero.png)
+![Hero inner-page variant](./hero--inner-page.png)
+![Hero contacted variant](./hero--contacted.png)
 
 ## Used by templates/pages
-- [Homepage](../templates/homepage.md)
+- [Homepage](../templates/homepage.md) — variant: home
+- [FAQ/contacted](../templates/faq-contacted.md) — variant: contacted
 
 ## CMS fields
 | Field | Type | Required | Notes |
@@ -329,9 +414,11 @@ Required sections:
 - [Carousel](../interactions/carousel.md)
 
 ## Variants
-- Background/theme variants
-- Layout variants
-- Media/no-media variants
+| Variant | Used by | Screenshot | Field/behavior differences | Notes |
+|---|---|---|---|---|
+| Base/home | [Homepage](../templates/homepage.md) | `./hero.png` | Supports large heading, body, media, CTA | Default marketing hero. |
+| Inner page | [Services](../templates/services.md) | `./hero--inner-page.png` | Same fields, different density/media treatment | Do not split unless CMS fields differ materially. |
+| Contacted | [FAQ/contacted](../templates/faq-contacted.md) | `./hero--contacted.png` | Same core fields, special theme/graphic | Variant of Hero, not a separate module. |
 
 ## Editorial constraints
 - Min/max item counts
@@ -345,7 +432,7 @@ Required sections:
 
 ## components/*.md
 
-Use for smaller UI primitives, composed reusable UI elements, and global shell components. Components are the prerequisites that modules depend on.
+Use for smaller UI primitives, composed reusable UI elements, and global shell components. Components are the prerequisites that modules depend on. Component names should also be structural/function-based rather than content-bound, e.g. `button`, `icon-button`, `stat-card`, `media-card`, `accordion-control`.
 
 Required sections:
 

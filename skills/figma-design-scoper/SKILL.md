@@ -30,12 +30,15 @@ Create these todos at the start unless the user explicitly narrows the task:
 1. **Confirm scope and inputs** — target platform, estimate depth, PDF path, output folder, and whether API enrichment is allowed.
 2. **Extract PDF screenshots** — run the PDF extraction script and verify manifest/screens exist.
 3. **Triage PDF pages** — create triage files and classify pages before deep analysis.
-4. **Analyze CMS module system** — decompose `actual-design` and relevant `design-system` pages into page compositions, flexible CMS modules, shared components, content models, interactions, and styles.
-5. **Create inter-linked knowledge base** — write pages/templates/modules/components with regular relative Markdown links between them; add styles/interactions/content models only when needed to explain implementation.
-6. **Create rough rollup if requested** — estimate each unique module and component, then roll up totals through the page-to-module/component map.
-7. **Review and summarize** — check page/module/component links, assumptions, risks, counts, and report next questions.
+4. **Analyze CMS module system** — decompose `actual-design` and relevant `design-system` pages into page instances, candidate shared templates, candidate flexible CMS modules, shared components, content models, interactions, and styles.
+5. **Review templates, module families, and variants** — after drafting initial page/template/module Markdown files/screenshots, review them for near-duplicates and refactor similar templates/modules into reusable templates/module families with documented page/module variants before finalizing stacks and links.
+6. **Create inter-linked knowledge base** — finalize pages/templates/modules/components with regular relative Markdown links between them; add styles/interactions/content models only when needed to explain implementation.
+7. **Create rough rollup if requested** — estimate each unique module family and component, then roll up totals through the page-to-module/component map.
+8. **Review and summarize** — check page/module/component links, assumptions, risks, counts, and report next questions.
 
 Create rough estimate artifacts only when the user explicitly asks for quoting/estimation.
+
+Complete the **Review templates, module families, and variants** todo only after initial page/template/module Markdown files/screenshots exist, every route/content instance has been separated from its reusable template, and every candidate module has either been merged into a module family as a variant or explicitly kept separate with a short reason.
 
 If API enrichment is requested and quota allows, add a separate todo after PDF triage: **Fetch optional Figma metadata**. If Poppler/PDF tooling is missing, keep the current todo in progress and add a blocker todo to install or work around the missing tool.
 
@@ -54,6 +57,7 @@ If API enrichment is requested and quota allows, add a separate todo after PDF t
      - `figma-analysis/_pdf/summary.md`
    - Use `--dpi=144` by default; increase only if the screenshots are too low fidelity. Use `--format=jpg` for smaller files or `--format=png` for lossless review.
    - For large PDFs, up to around 200 pages, run `node .agents/skills/figma-design-scoper/scripts/pdf-build-triage.ts` after extraction to create `_pdf/triage.md`.
+   - Use `node .agents/skills/figma-design-scoper/scripts/pdf-crop-regions.ts` to render tight module/component screenshot crops from selected PDF page regions instead of copying full-page screenshots. The script accepts either one crop via CLI args or a JSON crop plan and writes `_pdf/crops-manifest.json`.
    - Keep `_pdf/` lean: do not generate parallel CSV and Markdown copies of the same PDF inventory/triage information unless explicitly requested.
    - Complete the **Extract PDF screenshots** todo only after `screenshots/pdf/manifest.json` and `_pdf/summary.md` exist.
 
@@ -78,29 +82,47 @@ If API enrichment is requested and quota allows, add a separate todo after PDF t
    - If using API screenshots, the script batches node IDs, caches outputs, surfaces `Retry-After`, `X-Figma-Plan-Tier`, `X-Figma-Rate-Limit-Type`, and `X-Figma-Upgrade-Link`, and skips already downloaded files.
 
 5. **Identify CMS-programmable building blocks from triaged PDF pages**
-   - Treat `actual-design` PDF pages as examples of page/template compositions, not as isolated implementation units.
+   - Treat `actual-design` PDF pages as examples of page instances and template compositions, not as isolated implementation units.
    - Treat `design-system` and `component-playground` pages as sources for shared components, styles, variants, states, and reusable patterns.
    - Rename or map generic PDF pages (`page-001`, `page-002`) to human names by visual inspection, e.g. homepage, services main page, case study detail.
-   - For each page/template, identify two separate implementation lists:
+   - Separate **pages** from **templates**:
+     - **Pages** are concrete CMS route/content instances, often differing by locale, country, audience, or copy, e.g. `about-switzerland.md` and `about-luxembourg.md`.
+     - **Templates** are reusable implementation/layout patterns that many pages can use, e.g. one `about.md` template used by both about pages.
+     - Do not create separate templates for country/locale/content variants when the module stack and layout skeleton are substantially shared. Put the variation in page content, module variant choices, and page-level notes.
+     - Create a separate template only when the route has a materially different layout skeleton, fixed page components, data requirements, or assembly rules.
+   - For each template, identify two separate implementation lists:
      - **CMS module stack**: flexible modules editors can add/reorder/configure in the CMS, e.g. `Hero → Reference Slider → Fact Grid → CTA Band`.
-     - **Hardcoded page components**: components fixed into the page/template shell or exact page location, e.g. `Header`, `Navigation`, `Footer`, page-specific anchors, or custom layout chrome.
-   - For each module, identify contained/reused components, e.g. `CTA Band → Button, Link, Rich Text, Icon`.
-   - For each module, define the CMS fields/editing model needed to make it flexible, e.g. headings, rich text, media, CTA arrays, card repeaters, references, booleans, style variants.
+     - **Hardcoded page components**: components fixed into the template shell or exact page location, e.g. `Header`, `Navigation`, `Footer`, page-specific anchors, or custom layout chrome.
+   - For each page, link to its template and list only content-specific module variants, locale/country differences, route metadata, and overrides.
+   - First draft candidate page/template/module Markdown files/screenshots using neutral reusable names where possible, then during the **Review templates, module families, and variants** todo run a clustering pass across those drafts. Group visually or structurally similar templates/pages and modules into shared templates/module families with variants when they share the same editorial purpose, core fields, reusable components, or layout skeleton.
+   - Treat candidate modules as variants of one module family when differences are mostly content, theme/color, background/media, density, page context, CTA count, or optional subregions. Example pattern: homepage hero, inner-page hero, and contacted/FAQ hero should usually be one `Hero` module with variants, not three unrelated modules.
+   - Create a separate module only when the CMS/editor model, primary purpose, behavior, data source, or contained component structure materially differs. If unsure, prefer one flexible module with documented variants over multiple narrow one-off modules.
+   - Name modules and components by reusable function/structure, not by one page's text content or business-specific copy. Prefer generic implementation names like `Final CTA`, `Image Carousel`, `Hero`, `Accordion List`, `Card Grid`, `Logo Grid`, `Team Grid`; avoid content-bound names like `Recruiting CTA` or `Process Carousel` unless the data model/behavior is truly specific to recruiting or a process.
+   - Put content-specific usage in template stacks, variant names, screenshots, and notes, not in the base module/component name. Example: `[Final CTA](../modules/final-cta.md) — variant: recruiting` rather than `recruiting-cta.md`.
+   - For each module family, identify contained/reused components, e.g. `CTA Band → Button, Link, Rich Text, Icon`.
+   - For each module family, define the CMS fields/editing model needed to make it flexible, e.g. headings, rich text, media, CTA arrays, card repeaters, references, booleans, style variants.
+   - In template module stacks, link to the module family and name the variant inline, e.g. `[Hero](../modules/hero.md) — variant: contacted`.
    - Keep support pages linked as evidence where they affect requirements, route scope, module variants, component states, or risk.
 
 6. **Preserve screenshot traceability**
    - Use `figma-analysis/screenshots/pdf/manifest.json` as the source of extracted PDF screenshots.
    - Record PDF page number and screenshot path in every template/page Markdown file.
-   - For every module and component, create co-located cropped screenshots beside the Markdown file when visible in the PDF/Figma source.
+   - For every module and component that is visible in the PDF/Figma source, create a co-located screenshot that is cropped to that module/component only.
+   - Do **not** copy an entire page/template screenshot into `modules/` or `components/` and label it as a module/component screenshot. Full-page screenshots belong only in `screenshots/pdf/` and template/page files.
+   - A module/component screenshot must be cropped as closely around the full module/component as possible without cutting off any part of it. Include only enough surrounding whitespace/context to preserve edges, shadows, focus rings, or overlapping elements that belong to it.
+   - If crop boundaries are uncertain, expand the crop slightly rather than cutting into the component; do not expand so far that unrelated modules or a whole long page are included.
    - Name screenshot files after the Markdown description file: `modules/hero.md` uses `modules/hero.png`; variants use `modules/hero--dark.png`, `modules/hero--compact.png`, etc. Components follow the same rule, e.g. `components/button.md`, `components/button.png`, `components/button--secondary.png`.
-   - Embed the co-located screenshots directly in the Markdown description with relative image syntax, e.g. `![Hero module](./hero.png)`.
-   - Include all variants that differ materially in styling, size, composition, behavior state, or CMS structure. Do not create duplicate screenshots for trivial content-only differences.
-   - If a module/component cannot be cropped confidently from the PDF, add a `Screenshot status` note explaining what is missing.
+   - Embed the co-located cropped screenshots directly in the Markdown description with relative image syntax, e.g. `![Hero module](./hero.png)`.
+   - Include all variants that differ materially in styling, size, composition, behavior state, or CMS structure. Store module-family variant screenshots beside the same module file, e.g. `modules/hero.jpg`, `modules/hero--inner-page.jpg`, `modules/hero--contacted.jpg`.
+   - Do not create duplicate content-only examples if layout/styling/composition is the same.
+   - Prefer crop-plan driven screenshots for batches, e.g. `figma-analysis/_pdf/crop-plan.json`, so the agent only has to inspect a page once, record approximate coordinates, and let the script render the exact module/component crops.
+   - Before completing the knowledge-base todo, spot-check module/component images and remove/replace any full-page screenshots stored beside module/component Markdown files. Treat warnings from `_pdf/crops-manifest.json` as blockers to review.
    - If API metadata is available, optionally add Figma node IDs, but do not require them.
 
 7. **Analyze linked structure**
    - Inventory pages/templates as compositions of reusable modules, not merely as screens.
-   - Inventory modules as CMS-programmable content blocks with fields, variants, allowed components, responsive behavior, and editorial constraints.
+   - Inventory modules as CMS-programmable module families with fields, variants, allowed components, responsive behavior, and editorial constraints.
+   - Each module file must include a `## Variants` section that lists materially different variants, where each variant is used, and whether the variant changes fields/behavior or only presentation/content.
    - Inventory shared components such as Header, Navigation, Button, Link, Card, Form Input, Icon, Accordion Item, Media, and Rich Text as prerequisites for modules.
    - Use regular relative Markdown links inside page, module, and component Markdown files to answer: "Which CMS modules build the homepage?", "Which hardcoded components appear on the page?", and "Which components are used inside the CTA module?"
    - Note ambiguity, missing states, inconsistent components, unclear copy, accessibility concerns, CMS editorial risks, and implementation risks.
@@ -110,8 +132,9 @@ If API enrichment is requested and quota allows, add a separate todo after PDF t
    - Keep generated documents minimal: pages/templates, modules, components, and only necessary supporting styles/interactions/content models. Estimates are optional and only generated on request.
    - Write concise, developer-facing Markdown that can be pasted into a project-management tool.
    - Include assumptions and confidence levels for estimation.
-   - Ensure every template/page file lists its CMS module stack and hardcoded page components, every module file lists contained component links, and every component file lists where it is used.
-   - Ensure every module/component Markdown file embeds its co-located screenshot(s), including meaningful variants.
+   - Ensure every page file links to its template and documents only route/content-specific differences, every template file lists its reusable CMS module stack with variant names where applicable and hardcoded page components, every module file lists contained component links and variants, and every component file lists where it is used.
+   - Ensure every module/component Markdown file embeds valid co-located cropped screenshot(s), including meaningful variants.
+   - Before delivery, review the template and module inventory for near-duplicates. Merge templates/pages whose differences are only content/country/locale/module variant choices, and merge modules whose differences can be represented as variants without changing the CMS/editor model materially.
    - Do not generate separate dependency matrices or build-order documents unless explicitly requested.
    - For rough estimates, estimate unique modules and components directly; do not estimate pages as standalone builds except as a small assembly/integration allowance.
    - Complete the **Create inter-linked knowledge base** todo only after pages/modules/components are linked. If estimates were explicitly requested, complete estimate work only after module/component estimate files and the rollup exist.
