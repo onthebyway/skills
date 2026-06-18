@@ -1,20 +1,6 @@
-# Agent Skills
+# byway agent skills
 
 Shared Agent Skills repository installable with Vercel's Skills CLI.
-
-## Install
-
-Install all skills:
-
-```bash
-npx skills add onthebyway/skills
-```
-
-Install one skill:
-
-```bash
-npx skills add onthebyway/skills --skill <skill-name>
-```
 
 ## Skills
 
@@ -24,10 +10,17 @@ npx skills add onthebyway/skills --skill <skill-name>
 | `extract-page-content` | Use when the agent needs to fetch a public web URL and read its contents as cleaned HTML or Markdown returned directly in the tool output, without writing artifacts to files. | `npx skills add onthebyway/skills --skill extract-page-content` |
 | `figma-design-scoper` | Use when a user provides a Figma export PDF or Figma file/link and wants it dissected into inter-linked pages, CMS content modules, shared components, styles, risks, and quote-ready implementation artifacts for developers. | `npx skills add onthebyway/skills --skill figma-design-scoper` |
 | `notion-tickets` | Fetch and inspect tickets from a user-provided Notion page, database, data source, or URL. Use when the user asks to list, filter, paginate, or retrieve Notion tickets/tasks from a specific Notion resource. | `npx skills add onthebyway/skills --skill notion-tickets` |
-| `shared-skill-repository` | Sync local Agent Skills into a shared Git skill repository, regenerate its README directory, and optionally commit/push changes. Use when users want to publish, update, or maintain a team skills repo for npx skills add. | `npx skills add onthebyway/skills --skill shared-skill-repository` |
-| `skill-builder` | Creates or updates Agent Skills in this workspace. Use when adding global skills under .agents/skills or project skills under a project subdirectory's .agents/skills. | `npx skills add onthebyway/skills --skill skill-builder` |
 | `take-web-screenshot` | Captures a full-page screenshot of a URL at a specified width using headless Chromium/Playwright, producing JPEG/PNG files and metadata for downstream agent workflows. | `npx skills add onthebyway/skills --skill take-web-screenshot` |
 | `use-browser` | Use when a task needs live browser investigation with Playwright like reproducing JS UI bugs, collecting console/network errors, clicking controls, evaluating JavaScript in a page. | `npx skills add onthebyway/skills --skill use-browser` |
+
+## Meta-Skills
+
+Meta-skills help create, publish, and maintain this shared skill repository.
+
+| Skill | Description | Install command |
+| --- | --- | --- |
+| `shared-skill-repository` | Sync local Agent Skills into a shared Git skill repository, regenerate its README directory, and optionally commit/push changes. Use when users want to publish, update, or maintain a team skills repo for npx skills add. | `npx skills add onthebyway/skills --skill shared-skill-repository` |
+| `skill-builder` | Creates or updates Agent Skills in this workspace. Use when adding global skills under .agents/skills or project skills under a project subdirectory's .agents/skills. | `npx skills add onthebyway/skills --skill skill-builder` |
 
 ## Repository layout
 
