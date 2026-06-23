@@ -5,5 +5,8 @@
   "scripts": {
     "notion-tickets": "node scripts/notion-tickets.ts",
     "check": "node scripts/notion-tickets.ts --help >/dev/null"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
   }
 }
